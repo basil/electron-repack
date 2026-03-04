@@ -2,8 +2,6 @@
 """Stage 0: Extract -- download and extract the source package."""
 
 from github import Github
-import magic
-import os
 from pathlib import Path
 import re
 import requests
@@ -122,14 +120,6 @@ def detect_version(text: str) -> str:
         if match:
             return match.group(1)
     return "unknown"
-
-
-def has_launcher_script(root: Path) -> bool:
-    for item in root.rglob("*"):
-        if item.is_file() and os.access(item, os.X_OK):
-            if magic.from_file(str(item), mime=True) == "text/x-shellscript":
-                return True
-    return False
 
 
 def find_parent_package_json(node_file: Path) -> Path | None:
@@ -367,14 +357,11 @@ def main() -> None:
         error(f"Unknown source type: {source_type}")
         return  # unreachable
 
-    # Detect launcher and native modules
-    launcher_present = has_launcher_script(output_dir)
+    # Detect native modules
     native_modules = collect_native_modules(output_dir)
     native = len(native_modules) > 0
 
-    log(
-        f"Detected: version={version}, launcher={launcher_present}, native_modules={native}"
-    )
+    log(f"Detected: version={version}, native_modules={native}")
 
     validate_extracted(app_id, output_dir)
 
@@ -385,7 +372,6 @@ def main() -> None:
             "version": version,
             "full_name": full_name,
             "description": description,
-            "has_launcher": launcher_present,
             "has_native_modules": native,
             "native_modules": native_modules,
         },

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Stage 1: Normalize -- reorganize extracted files into a standard FHS layout."""
 
-import magic
 import os
 from pathlib import Path
 import re
@@ -163,31 +162,6 @@ def move_icons(output_dir: Path, app_root: Path, app_id: str) -> None:
                 log("Pixmap icons already in correct location")
 
 
-def find_source_launcher(output_dir: Path, app_id: str) -> Path | None:
-    """Find a shell launcher script in /usr/bin from the source package."""
-    source_bin = output_dir / "usr" / "bin" / app_id
-    if source_bin.exists() and source_bin.is_file():
-        mime = magic.from_file(str(source_bin), mime=True)
-        if mime == "text/x-shellscript":
-            return source_bin
-    return None
-
-
-def setup_launcher(output_dir: Path, app_lib_dir: Path, app_id: str) -> None:
-    source_launcher = find_source_launcher(output_dir, app_id)
-
-    if source_launcher:
-        # App ships its own launcher -- fix paths in place
-        content = source_launcher.read_text()
-        content = re.sub(r"/opt/[^/\s]+", f"/usr/lib64/{app_id}", content)
-        content = re.sub(r"/usr/lib/[^/\s]+", f"/usr/lib64/{app_id}", content)
-        source_launcher.write_text(content)
-        source_launcher.chmod(0o755)
-        log(f"Updated launcher at {source_launcher} with normalized paths")
-    else:
-        log("No source launcher -- desktop file Exec= is sufficient")
-
-
 def cleanup_old_dirs(output_dir: Path) -> None:
     """Remove original source directories that are no longer needed."""
     for name in ["opt", "squashfs-root"]:
@@ -300,7 +274,6 @@ def main() -> None:
     move_app_files(app_root, app_lib_dir)
     normalize_desktop_file(output_dir, app_id)
     move_icons(output_dir, app_root, app_id)
-    setup_launcher(output_dir, app_lib_dir, app_id)
     cleanup_old_dirs(output_dir)
     cleanup_app_lib_dir(app_lib_dir, app_id)
     validate_output(output_dir, app_lib_dir, app_id)

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Stage 3: Patch -- apply file patches, ASAR patches, and electron flags."""
 
-import magic
 from pathlib import Path
 import shutil
 import subprocess
@@ -73,39 +72,6 @@ def apply_patches(patches_dir: Path, output_dir: Path, app_lib_dir: Path) -> Non
     apply_asar_patches(patches_dir, app_lib_dir)
 
 
-def inject_flags_into_launcher(launcher_path: Path, flags_str: str) -> bool:
-    """Try to inject flags into an existing shell launcher. Returns True on success."""
-    if not launcher_path.exists():
-        return False
-
-    if magic.from_file(str(launcher_path), mime=True) != "text/x-shellscript":
-        return False
-
-    content = launcher_path.read_text()
-    if "exec" not in content.lower() or "electron" not in content:
-        log("Non-standard launcher, updating desktop file")
-        return False
-
-    log("Updating launcher script with flags")
-
-    new_lines: list[str] = []
-
-    for line in content.split("\n"):
-        if "exec" in line.lower() and "electron" in line:
-            if '"$@"' in line:
-                line = line.replace('"$@"', f'{flags_str} "$@"')
-            elif "$@" in line:
-                line = line.replace("$@", f"{flags_str} $@")
-            else:
-                line = line.rstrip() + f" {flags_str}"
-
-        new_lines.append(line)
-
-    launcher_path.write_text("\n".join(new_lines))
-    log("Launcher script updated")
-    return True
-
-
 def inject_flags_into_desktop(desktop_path: Path, flags_str: str) -> None:
     log("Updating desktop file with flags")
 
@@ -126,7 +92,7 @@ def inject_flags_into_desktop(desktop_path: Path, flags_str: str) -> None:
 
 
 def add_electron_flags(
-    electron_flags: list[str], app_lib_dir: Path, output_dir: Path, app_id: str
+    electron_flags: list[str], output_dir: Path, app_id: str
 ) -> None:
     if not electron_flags:
         return
@@ -135,11 +101,8 @@ def add_electron_flags(
     flags_str = " ".join(electron_flags)
     log(f"Flags: {flags_str}")
 
-    launcher_path = app_lib_dir / app_id
     desktop_path = output_dir / "usr" / "share" / "applications" / f"{app_id}.desktop"
-
-    if not inject_flags_into_launcher(launcher_path, flags_str):
-        inject_flags_into_desktop(desktop_path, flags_str)
+    inject_flags_into_desktop(desktop_path, flags_str)
 
 
 def main() -> None:
@@ -159,7 +122,7 @@ def main() -> None:
     app_lib_dir = output_dir / "usr" / "lib64" / app_id
 
     apply_patches(Path("patches"), output_dir, app_lib_dir)
-    add_electron_flags(electron_flags, app_lib_dir, output_dir, app_id)
+    add_electron_flags(electron_flags, output_dir, app_id)
 
     log("Patching complete")
 
