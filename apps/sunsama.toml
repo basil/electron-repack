@@ -1,0 +1,4 @@
+[source]
+type = "appimage"
+urls = ["https://desktop.sunsama.com"]
+user_agent = true

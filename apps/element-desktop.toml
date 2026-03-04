@@ -1,0 +1,6 @@
+[source]
+type = "deb"
+apt_repo_url = "https://packages.element.io/debian"
+apt_dist = "default"
+apt_component = "main"
+gpg_key_url = "https://packages.element.io/debian/element-io-archive-keyring.gpg"

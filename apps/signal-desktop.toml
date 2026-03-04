@@ -1,0 +1,6 @@
+[source]
+type = "deb"
+apt_repo_url = "https://updates.signal.org/desktop/apt"
+apt_dist = "xenial"
+apt_component = "main"
+gpg_key_url = "https://updates.signal.org/desktop/apt/keys.asc"

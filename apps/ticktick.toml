@@ -1,0 +1,7 @@
+[source]
+type = "deb"
+urls = [
+    "https://download.ticktick.app/download/linux/linux_deb_x64/ticktick-8.0.0-amd64.deb",
+    "https://download.ticktick.app/download/linux/linux_deb_arm64/ticktick-8.0.0-arm64.deb"
+]
+user_agent = true
